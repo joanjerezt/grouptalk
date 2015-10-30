@@ -28,7 +28,7 @@ public class StingResource {
         Sting sting = null;
         AuthToken authenticationToken = null;
         try {
-            sting = stingDAO.createSting(securityContext.getUserPrincipal().getName(), subject, content);
+            sting = stingDAO.createSting(securityContext.getUserPrincipal().getName(), subject, content,groupid);
         } catch (SQLException e) {
             throw new InternalServerErrorException();
         }

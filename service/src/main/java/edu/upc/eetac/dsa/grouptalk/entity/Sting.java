@@ -27,7 +27,7 @@ public class Sting {
     private List<Link> links;
     private String id;
     private String userid;
-    private String creator;
+    private String groupid;
     private String subject;
     private String content;
     private long creationTimestamp;
@@ -57,12 +57,12 @@ public class Sting {
         this.userid = userid;
     }
 
-    public String getCreator() {
-        return creator;
+    public String getGroupid() {
+        return groupid;
     }
 
-    public void setCreator(String creator) {
-        this.creator = creator;
+    public void setGroupid(String groupid) {
+        this.groupid = groupid;
     }
 
     public String getSubject() {

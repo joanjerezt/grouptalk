@@ -14,7 +14,8 @@ import java.sql.*;
 public class StingDAOImpl implements StingDAO {
 
     @Override
-    public Sting createSting(String userid, String subject, String content) throws SQLException {
+    public Sting createSting(String userid, String subject, String content,String groupid) throws SQLException
+    {
         Connection connection = null;
         PreparedStatement stmt = null;
         String id = null;
@@ -28,12 +29,21 @@ public class StingDAOImpl implements StingDAO {
             else
                 throw new SQLException();
 
-            stmt = connection.prepareStatement(StingDAOQuery.CREATE_STING);
+            stmt = connection.prepareStatement(StingDAOQuery.CHECK_GROUP);
+            ResultSet rt = stmt.executeQuery();
+            if(rs == null)throw new SQLException();
+
+
+            else
+                stmt = connection.prepareStatement(StingDAOQuery.CREATE_STING);
             stmt.setString(1, id);
             stmt.setString(2, userid);
             stmt.setString(3, subject);
             stmt.setString(4, content);
+            stmt.setString(5, groupid);
+
             stmt.executeUpdate();
+
         } catch (SQLException e) {
             throw e;
         } finally {
@@ -47,7 +57,8 @@ public class StingDAOImpl implements StingDAO {
     }
 
     @Override
-    public Sting getStingById(String id) throws SQLException {
+    public Sting getStingById(String id) throws SQLException
+    {
         Sting sting = null;
 
         Connection connection = null;
@@ -63,7 +74,6 @@ public class StingDAOImpl implements StingDAO {
                 sting = new Sting();
                 sting.setId(rs.getString("id"));
                 sting.setUserid(rs.getString("userid"));
-                sting.setCreator(rs.getString("fullname"));
                 sting.setSubject(rs.getString("subject"));
                 sting.setContent(rs.getString("content"));
                 sting.setCreationTimestamp(rs.getTimestamp("creation_timestamp").getTime());
@@ -77,44 +87,8 @@ public class StingDAOImpl implements StingDAO {
         }
         return sting;
     }
-
-    @Path("/{id}")
-    @GET
-    @Produces(BeeterMediaType.BEETER_STING)
-    public Response getSting(@PathParam("id") String id, @Context Request request) {
-        // Create cache-control
-        CacheControl cacheControl = new CacheControl();
-        Sting sting = null;
-        StingDAO stingDAO = new StingDAOImpl();
-        try {
-            sting = stingDAO.getStingById(id);
-            if (sting == null)
-                throw new NotFoundException("Sting with id = " + id + " doesn't exist");
-
-            // Calculate the ETag on last modified date of user resource
-            EntityTag eTag = new EntityTag(Long.toString(sting.getLastModified()));
-
-            // Verify if it matched with etag available in http request
-            Response.ResponseBuilder rb = request.evaluatePreconditions(eTag);
-
-            // If ETag matches the rb will be non-null;
-            // Use the rb to return the response without any further processing
-            if (rb != null) {
-                return rb.cacheControl(cacheControl).tag(eTag).build();
-            }
-
-            // If rb is null then either it is first time request; or resource is
-            // modified
-            // Get the updated representation and return with Etag attached to it
-            rb = Response.ok(sting).cacheControl(cacheControl).tag(eTag);
-            return rb.build();
-        } catch (SQLException e) {
-            throw new InternalServerErrorException();
-        }
-    }
-
     @Override
-    public StingCollection getStings(long timestamp, boolean before) throws SQLException {
+    public StingCollection getStingsByGroup(String groupid) throws SQLException {
         StingCollection stingCollection = new StingCollection();
 
         Connection connection = null;
@@ -122,11 +96,8 @@ public class StingDAOImpl implements StingDAO {
         try {
             connection = Database.getConnection();
 
-            if(before)
-                stmt = connection.prepareStatement(StingDAOQuery.GET_STINGS);
-            else
-                stmt = connection.prepareStatement(StingDAOQuery.GET_STINGS_AFTER);
-            stmt.setTimestamp(1, new Timestamp(timestamp));
+            stmt = connection.prepareStatement(StingDAOQuery.GET_STINGS);
+
 
             ResultSet rs = stmt.executeQuery();
             boolean first = true;
@@ -135,13 +106,6 @@ public class StingDAOImpl implements StingDAO {
                 sting.setId(rs.getString("id"));
                 sting.setUserid(rs.getString("userid"));
                 sting.setSubject(rs.getString("subject"));
-                sting.setCreationTimestamp(rs.getTimestamp("creation_timestamp").getTime());
-                sting.setLastModified(rs.getTimestamp("last_modified").getTime());
-                if (first) {
-                    stingCollection.setNewestTimestamp(sting.getLastModified());
-                    first = false;
-                }
-                stingCollection.setOldestTimestamp(sting.getLastModified());
                 stingCollection.getStings().add(sting);
             }
         } catch (SQLException e) {
@@ -152,6 +116,8 @@ public class StingDAOImpl implements StingDAO {
         }
         return stingCollection;
     }
+
+
 
     @Override
     public Sting updateSting(String id, String subject, String content) throws SQLException {

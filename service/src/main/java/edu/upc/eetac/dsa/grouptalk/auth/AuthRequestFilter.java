@@ -1,5 +1,6 @@
 package edu.upc.eetac.dsa.grouptalk.auth;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.upc.eetac.dsa.grouptalk.dao.AuthTokenDAOImpl;
 import edu.upc.eetac.dsa.grouptalk.entity.Role;
 
@@ -23,6 +24,7 @@ import java.util.List;
 
 @Provider
 @Priority(Priorities.AUTHENTICATION)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthRequestFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {

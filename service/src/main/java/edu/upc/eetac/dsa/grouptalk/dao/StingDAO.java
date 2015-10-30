@@ -10,7 +10,7 @@ import java.sql.SQLException;
  * Created by juan on 30/09/15.
  */
 public interface StingDAO {
-    public Sting createSting(String userid, String subject, String content) throws SQLException;
+    public Sting createSting(String userid, String subject, String content, String groupid) throws SQLException;
     public Sting getStingById(String id) throws SQLException;
 
     public Sting updateSting(String id, String subject, String content) throws SQLException;
