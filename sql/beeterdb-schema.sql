@@ -26,22 +26,22 @@ CREATE TABLE auth_tokens (
     PRIMARY KEY (token)
 );
 
+CREATE TABLE groups (
+    id BINARY(16) NOT NULL,
+    groupname VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE stings (
     id BINARY(16) NOT NULL,
     userid BINARY(16) NOT NULL,
     groupid BINARY(16) NOT NULL,
-    subject VARCHAR(100) NOT NULL,
+    subject VARCHAR(100),
     content text NOT NULL,
     creation_timestamp TIMESTAMP NOT NULL,
     last_modified datetime not null default current_timestamp,
-    FOREIGN KEY (userid) REFERENCES users(id) on delete cascade,
-    FOREIGN KEY (groupid) REFERENCES groups(id) on delete cascade,
-    PRIMARY KEY (id)
-);
-
-CREATE TABLE groups (
-    id BINARY(16) NOT NULL,
-    groupname VARCHAR(100) NOT NULL,
+    FOREIGN KEY (userid) REFERENCES users (id) on delete cascade,
+    FOREIGN KEY (groupid) REFERENCES groups (id) on delete cascade,
     PRIMARY KEY (id)
 );
 
@@ -57,6 +57,10 @@ CREATE TABLE group_users (
 CREATE TABLE thread (
     id BINARY(16) NOT NULL,
     stingid BINARY(16) NOT NULL,
+    userid BINARY(16) NOT NULL,
+    creation_timestamp TIMESTAMP NOT NULL,
+    last_modified datetime not null default current_timestamp,
     FOREIGN KEY (stingid) REFERENCES stings(id) on delete cascade,
+    FOREIGN KEY (userid) REFERENCES users(id) on delete cascade,
     PRIMARY KEY (id)
 );

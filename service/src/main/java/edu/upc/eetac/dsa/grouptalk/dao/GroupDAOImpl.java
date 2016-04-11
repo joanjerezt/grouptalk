@@ -15,24 +15,23 @@ import java.util.List;
  */
 public class GroupDAOImpl implements GroupDAO {
     @Override
-    public Group createGroup(String userid, String groupname) throws SQLException
-    {
+    public Group createGroup(String userid, String groupname) throws SQLException {
         Connection connection = null;
-        PreparedStatement stmt       = null;
-        String            groupid    = null;
+        PreparedStatement stmt = null;
+        String id = null;
         try {
             connection = Database.getConnection();
 
             stmt = connection.prepareStatement(UserDAOQuery.UUID);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                groupid = rs.getString(1);
+                id = rs.getString(1);
             } else {
                 throw new SQLException();
             }
 
             stmt = connection.prepareStatement(GroupDAOQuery.CREATE_GROUP);
-            stmt.setString(1, groupid);
+            stmt.setString(1, id);
             stmt.setString(2, userid);
             stmt.setString(3, groupname);
 
@@ -50,16 +49,15 @@ public class GroupDAOImpl implements GroupDAO {
                 connection.close();
             }
         }
-        return this.getGroupById(groupid);
+        return this.getGroupById(id);
     }
 
     @Override
-    public Group getGroupById(String id) throws SQLException
-    {
+    public Group getGroupById(String id) throws SQLException {
         Group group = null;
 
-        Connection        connection = null;
-        PreparedStatement stmt       = null;
+        Connection connection = null;
+        PreparedStatement stmt = null;
         try {
             connection = Database.getConnection();
 
@@ -68,7 +66,14 @@ public class GroupDAOImpl implements GroupDAO {
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                group = new Group(rs.getString("id"), rs.getString("groupname"));
+                group = new Group();
+                group.setId(rs.getString("id"));
+                //group.setUserid(rs.getString("userid"));
+                group.setGroupname(rs.getString("groupname"));
+                //sting.setContent(rs.getString("content"));
+                group.setCreationTimestamp(rs.getTimestamp("creation_timestamp").getTime());
+                group.setLastModified(rs.getTimestamp("last_modified").getTime());
+                //group = new Group(rs.getString("id"), rs.getString("groupname"));
             }
         } catch (SQLException e) {
             throw e;
@@ -84,9 +89,8 @@ public class GroupDAOImpl implements GroupDAO {
     }
 
     @Override
-    public GroupCollection getGroups() throws SQLException
-    {
-
+    public GroupCollection getGroups() throws SQLException {
+        GroupCollection groupCollection = new GroupCollection();
         Connection connection = null;
         PreparedStatement stmt = null;
         try {
@@ -95,22 +99,25 @@ public class GroupDAOImpl implements GroupDAO {
             stmt = connection.prepareStatement(GroupDAOQuery.GET_GROUP);
 
             ResultSet rs = stmt.executeQuery();
-            List<Group> groups = new ArrayList<>();
+            boolean first = true;
             while (rs.next()) {
-                groups.add( new Group(rs.getString("id"), rs.getString("name")));
+                Group group = new Group();
+                group.setId(rs.getString("id"));
+                group.setGroupname(rs.getString("groupname"));
+                //sting.setSubject(rs.getString("subject"));
+                groupCollection.getGroups().add(group);
             }
-            return new GroupCollection(groups);
         } catch (SQLException e) {
             throw e;
         } finally {
             if (stmt != null) stmt.close();
             if (connection != null) connection.close();
         }
+        return groupCollection;
     }
 
     @Override
-    public boolean deleteGroup(String id) throws SQLException
-    {
+    public boolean deleteGroup(String id) throws SQLException {
         Connection connection = null;
         PreparedStatement stmt = null;
         try {
@@ -128,11 +135,11 @@ public class GroupDAOImpl implements GroupDAO {
             if (connection != null) connection.close();
         }
     }
+
     @Override
-    public void joinGroup(String userid, String groupid) throws SQLException
-    {
-        Connection        connection = null;
-        PreparedStatement stmt       = null;
+    public void joinGroup(String userid, String groupid) throws SQLException {
+        Connection connection = null;
+        PreparedStatement stmt = null;
 
         try {
             connection = Database.getConnection();
@@ -155,11 +162,11 @@ public class GroupDAOImpl implements GroupDAO {
             }
         }
     }
+
     @Override
-    public void leaveGroup(String userid, String groupid) throws SQLException
-    {
-        Connection        connection = null;
-        PreparedStatement stmt       = null;
+    public void leaveGroup(String userid, String groupid) throws SQLException {
+        Connection connection = null;
+        PreparedStatement stmt = null;
 
         try {
             connection = Database.getConnection();
@@ -180,6 +187,32 @@ public class GroupDAOImpl implements GroupDAO {
                 connection.setAutoCommit(true);
                 connection.close();
             }
+        }
+    }
+
+    @Override
+    public boolean isSuscribed(String userid, String groupid) throws SQLException {
+        Connection connection = null;
+        PreparedStatement stmt = null;
+        try {
+            connection = Database.getConnection();
+            String groupid2 = null;
+            stmt = connection.prepareStatement(GroupDAOQuery.IS_SUSCRIBED);
+            stmt.setString(1, groupid);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                groupid2 = (rs.getString("groupid"));
+            }
+            if (groupid2 == groupid) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (SQLException e) {
+            throw e;
+        } finally {
+            if (stmt != null) stmt.close();
+            if (connection != null) connection.close();
         }
     }
 }

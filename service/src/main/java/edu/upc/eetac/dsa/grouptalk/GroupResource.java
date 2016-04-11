@@ -26,7 +26,7 @@ public class GroupResource {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(BeeterMediaType.BEETER_AUTH_TOKEN)
-    public Response createGroup(@FormParam("groupname") String groupname, @Context UriInfo uriInfo)throws URISyntaxException {
+    public Response createGroup(@FormParam("groupname") String groupname, @Context UriInfo uriInfo) throws URISyntaxException {
         if (groupname == null)
             throw new BadRequestException("all parameters are mandatory");
         GroupDAO groupDAO = new GroupDAOImpl();
@@ -42,11 +42,8 @@ public class GroupResource {
 
         return Response.created(uri).type(BeeterMediaType.BEETER_GROUP).entity(group).build();
     }
-
-
-
-
-   /*  @GET
+/*
+    @GET
     @Produces(BeeterMediaType.BEETER_STING_COLLECTION)
     public StingCollection getStings(@QueryParam("timestamp") long timestamp, @DefaultValue("true") @QueryParam("before") boolean before) {
         StingCollection stingCollection = null;
@@ -71,7 +68,7 @@ public class GroupResource {
         try {
             group = GroupDAO.getGroupById(id);
             if (group == null) {
-                throw new NotFoundException("Sting with id = " + id + " doesn't exist");
+                throw new NotFoundException("Group with id = " + id + " doesn't exist");
             }
 
         } catch (SQLException e) {

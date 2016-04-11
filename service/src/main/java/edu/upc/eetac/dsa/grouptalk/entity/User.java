@@ -17,12 +17,18 @@ public class User {
     @InjectLinks({
             @InjectLink(resource = BeeterRootAPIResource.class, style = InjectLink.Style.ABSOLUTE, rel = "home", title = "Beeter Root API"),
             @InjectLink(resource = StingResource.class, style = InjectLink.Style.ABSOLUTE, rel = "current-stings", title = "Current stings", type= BeeterMediaType.BEETER_STING_COLLECTION),
+            @InjectLink(resource = StingResource.class, style = InjectLink.Style.ABSOLUTE, rel = "current-groups", title = "Current groups", type= BeeterMediaType.BEETER_GROUP_COLLECTION),
             @InjectLink(resource = LoginResource.class, style = InjectLink.Style.ABSOLUTE, rel = "logout", title = "Logout"),
             @InjectLink(resource = StingResource.class, style = InjectLink.Style.ABSOLUTE, rel = "create-sting", title = "Create sting", type=BeeterMediaType.BEETER_STING),
+            @InjectLink(resource = StingResource.class, style = InjectLink.Style.ABSOLUTE, rel = "create-group", title = "Create group", type=BeeterMediaType.BEETER_GROUP),
             @InjectLink(resource = UserResource.class, method = "getUser", style = InjectLink.Style.ABSOLUTE, rel = "self user-profile", title = "User profile", type= BeeterMediaType.BEETER_USER, bindings = @Binding(name = "id", value = "${instance.id}"))
     })
 
-    private List<Link> links;
+        private String id;
+        private String loginid;
+        private String email;
+        private String fullname;
+        private List<Link> links;
 
         public List<Link> getLinks() {
             return links;
@@ -63,9 +69,4 @@ public class User {
         public void setFullname(String fullname) {
             this.fullname = fullname;
         }
-
-        private String id;
-        private String loginid;
-        private String email;
-        private String fullname;
     }

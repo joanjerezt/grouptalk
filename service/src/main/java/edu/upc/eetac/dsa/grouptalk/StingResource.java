@@ -1,8 +1,8 @@
 package edu.upc.eetac.dsa.grouptalk;
 
-import edu.upc.eetac.dsa.grouptalk.dao.StingDAO;
-import edu.upc.eetac.dsa.grouptalk.dao.StingDAOImpl;
+import edu.upc.eetac.dsa.grouptalk.dao.*;
 import edu.upc.eetac.dsa.grouptalk.entity.AuthToken;
+import edu.upc.eetac.dsa.grouptalk.entity.Role;
 import edu.upc.eetac.dsa.grouptalk.entity.Sting;
 import edu.upc.eetac.dsa.grouptalk.entity.StingCollection;
 
@@ -20,29 +20,91 @@ public class StingResource {
     @Context
     private SecurityContext securityContext;
 
+    @Path("/newthread")
     @POST
-    public Response createSting(@FormParam("subject") String subject, @FormParam("content") String content, String groupid, @Context UriInfo uriInfo) throws URISyntaxException {
-        if(subject==null || content == null || groupid == null)
+    public Response createFirstSting(@FormParam("subject") String subject, @FormParam("content") String content, @FormParam("groupid") String groupid, @Context UriInfo uriInfo) throws URISyntaxException {
+        if(subject== null || content == null || groupid == null)
             throw new BadRequestException("all parameters are mandatory");
         StingDAO stingDAO = new StingDAOImpl();
         Sting sting = null;
         AuthToken authenticationToken = null;
+        String userid = securityContext.getUserPrincipal().getName();
+
+        GroupDAO groupDAO = new GroupDAOImpl();
+        boolean suscribed = false;
         try {
-            sting = stingDAO.createSting(securityContext.getUserPrincipal().getName(), subject, content,groupid);
+            suscribed = groupDAO.isSuscribed(userid,groupid);
         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        try {
+            if(suscribed){
+                sting = stingDAO.createSting(securityContext.getUserPrincipal().getName(), subject, content, groupid, null);
+            }
+            else {
+                throw new ForbiddenException("Not permitted operation");
+            }
+        }
+        catch (SQLException e) {
             throw new InternalServerErrorException();
         }
         URI uri = new URI(uriInfo.getAbsolutePath().toString() + "/" + sting.getId());
         return Response.created(uri).type(BeeterMediaType.BEETER_STING).entity(sting).build();
     }
 
+
+    @POST
+    public Response createSting(@FormParam("content") String content, @FormParam("groupid") String groupid, @FormParam("thread") String threadid, @Context UriInfo uriInfo) throws URISyntaxException {
+        if(content == null || groupid == null)
+            throw new BadRequestException("all parameters are mandatory");
+        StingDAO stingDAO = new StingDAOImpl();
+        Sting sting = null;
+        AuthToken authenticationToken = null;
+        String userid = securityContext.getUserPrincipal().getName();
+
+        GroupDAO groupDAO = new GroupDAOImpl();
+        boolean suscribed = false;
+        try {
+            suscribed = groupDAO.isSuscribed(userid,groupid);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        try {
+            if(suscribed){
+                sting = stingDAO.createSting(securityContext.getUserPrincipal().getName(),null,content, groupid, threadid);
+            }
+            else {
+                throw new ForbiddenException("Not permitted operation ");
+            }
+        }
+        catch (SQLException e) {
+            throw new InternalServerErrorException();
+        }
+        URI uri = new URI(uriInfo.getAbsolutePath().toString() + "/" + sting.getId());
+        return Response.created(uri).type(BeeterMediaType.BEETER_STING).entity(sting).build();
+    }
+
+
     @GET
     @Produces(BeeterMediaType.BEETER_STING_COLLECTION)
     public StingCollection getStings(String groupid) {
         StingCollection stingCollection = null;
+        GroupDAO groupDAO = new GroupDAOImpl();
+        String userid = securityContext.getUserPrincipal().getName();
+        boolean suscribed = false;
+        try {
+            suscribed = groupDAO.isSuscribed(userid,groupid);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         StingDAO stingDAO = new StingDAOImpl();
         try {
-            stingCollection = stingDAO.getStingsByGroup(groupid);
+            if(suscribed) {
+                stingCollection = stingDAO.getStingsByGroup(groupid);
+            }
+            else{
+                throw new ForbiddenException();
+            }
         } catch (SQLException e) {
             throw new InternalServerErrorException();
         }
@@ -88,7 +150,7 @@ public class StingResource {
     @PUT
     @Consumes(BeeterMediaType.BEETER_STING)
     @Produces(BeeterMediaType.BEETER_STING)
-    public Sting updateUser(@PathParam("id") String id, Sting sting) {
+    public Sting updateSting(@PathParam("id") String id, Sting sting) {
         if(sting == null)
             throw new BadRequestException("entity is null");
         if(!id.equals(sting.getId()))
@@ -100,7 +162,7 @@ public class StingResource {
 
         StingDAO stingDAO = new StingDAOImpl();
         try {
-            sting = stingDAO.updateSting(id, sting.getSubject(), sting.getContent());
+            sting = stingDAO.updateSting(id, sting.getContent());
             if(sting == null)
                 throw new NotFoundException("Sting with id = "+id+" doesn't exist");
         } catch (SQLException e) {
@@ -110,15 +172,25 @@ public class StingResource {
     }
     @Path("/{id}")
     @DELETE
-    public void deleteSting(@PathParam("id") String id) {
+    public void deleteSting(@PathParam("id") String id, @PathParam("threadid") String threadid) {
         String userid = securityContext.getUserPrincipal().getName();
         StingDAO stingDAO = new StingDAOImpl();
         try {
             String ownerid = stingDAO.getStingById(id).getUserid();
             if(!userid.equals(ownerid))
-                throw new ForbiddenException("operation not allowed");
-            if(!stingDAO.deleteSting(id))
-                throw new NotFoundException("Sting with id = "+id+" doesn't exist");
+                if(!userid.equals(Role.admin)) {
+                    throw new ForbiddenException("operation not allowed");
+                }
+            boolean firstpost = stingDAO.firstpost(id);
+            if(firstpost==false){
+                if(!stingDAO.deleteSting(id))
+                    throw new NotFoundException("Sting with id = "+id+" doesn't exist");
+                stingDAO.deleteThread(threadid);
+            }
+            else{
+                if(!stingDAO.deleteSting(id))
+                    throw new NotFoundException("Sting with id = "+id+" doesn't exist");
+            }
         } catch (SQLException e) {
             throw new InternalServerErrorException();
         }
